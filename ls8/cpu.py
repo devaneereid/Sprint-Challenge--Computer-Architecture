@@ -10,6 +10,7 @@ class CPU:
         self.ram = [0] * 256
         self.pc = 0
         self.SP = 7
+        self.FL = 1
 
     def load(self, filename):
         """Load a program into memory."""
@@ -46,6 +47,8 @@ class CPU:
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         #elif op == "SUB": etc
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -78,8 +81,10 @@ class CPU:
         MUL = 0b10100010
         PUSH = 0b01000101 
         POP = 0b01000110
-        # CALL = 0b01010000
-        # RET = 0b00010001
+        CMP = 0b10100111
+        JMP = 0b01010100
+        JEQ = 0b01010101
+        JNE = 0b01010110
 
         running = True
         instruction = 0
@@ -88,10 +93,10 @@ class CPU:
     
         while running:
             instruction = self.ram[self.pc]
-            print(instruction)
+            # print(instruction)
 
             if instruction == LDI:
-                print(LDI)
+                # print(LDI)
                 reg_a = self.ram_read(self.pc + 1)
                 reg_b = self.ram_read(self.pc + 2)
                 print(reg_b)
@@ -100,7 +105,7 @@ class CPU:
                 self.pc += 3
 
             elif instruction == PRN:
-                print(PRN)
+                # print(PRN)
                 reg_a = self.ram_read(self.pc + 1)
                 print(reg_a)
 
@@ -110,18 +115,18 @@ class CPU:
                 self.pc += 2
 
             elif instruction == HLT:
-                print(HLT)
+                # print(HLT)
                 running = False
 
             elif instruction == MUL:
-                print(MUL)
+                # print(MUL)
                 reg_a = self.ram_read(self.pc + 1)
-                print(reg_a)
+                # print(reg_a)
                 reg_b = self.ram_read(self.pc + 2)
-                print(reg_b)
+                # print(reg_b)
 
                 self.reg[reg_a] = self.reg[reg_a] * self.reg[reg_b]
-                print(self.reg[reg_a])
+                # print(self.reg[reg_a])
                 self.pc += 3
 
             elif instruction == PUSH:
@@ -141,6 +146,47 @@ class CPU:
                 self.reg[self.SP] += 1
 
                 self.pc += 2
+
+            # CMP register
+            elif instruction == CMP:
+                # CMP registerA registerB
+                reg_a = self.ram[self.pc + 1]
+                reg_b = self.ram[self.pc + 2]
+
+                # Compare the values in two registers
+                if self.reg[reg_a] == self.reg[reg_b]:
+                    # If they are equal, set the Equal E flag to 1, otherwise set it to 0
+                    self.FL = 1
+                else:
+                    self.FL = 0
+
+                self.pc += 3
+
+            # JMP register
+            elif instruction == JMP:
+                # Jump to the address stored in the given register
+                reg_a = self.ram[self.pc + 1]
+
+                # Set the PC to the address stored in the given register
+                self.pc = self.reg[reg_a]
+
+            # JEQ register
+            elif instruction == JEQ:
+                # If equal flag is set (true, 1), jump to the address stored in the given register
+                if self.FL == 1:
+                    reg_a = self.ram[self.pc + 1]
+                    self.pc = self.reg[reg_a]
+                else:
+                    self.pc += 2
+
+            # JNE Register
+            elif instruction == JNE:
+                # If E flag is clear (false, 0), jump to the address stored in the given register
+                if self.FL == 0:
+                    reg_a = self.ram[self.pc + 1]
+                    self.pc = self.reg[reg_a]
+                else: 
+                    self.pc += 2
 
     def ram_read(self, MAR):
         return self.ram[MAR]
